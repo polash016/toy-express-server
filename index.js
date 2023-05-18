@@ -1,23 +1,17 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const cors = require('cors');
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const cors = require("cors");
 const port = process.env.PORT || 5000;
-
-
-
 
 // middleware
 app.use(cors());
 app.use(express());
 
-app.get('/', (req, res) => {
-    res.send('Toy Server Running')
+app.get("/", (req, res) => {
+  res.send("Toy Server Running");
 });
-
-
-
 
 const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Pass}@cluster0.bioniru.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -27,7 +21,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -36,18 +30,25 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const database = client.db("toysDB");
+    const toysCollection = database.collection("carToys");
+
+    app.get("/toys", async (req, res) => {
+      const result = await toysCollection.find().limit(20).toArray();
+      res.send(result);
+    });
+    
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
 
-
-
-
-
 app.listen(port, () => {
-    console.log(`Server Running on Port: ${port}`)
-})
+  console.log(`Server Running on Port: ${port}`);
+});
