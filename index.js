@@ -3,11 +3,13 @@ const app = express();
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const cors = require("cors");
+const bodyParser = require('body-parser');
 const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
 app.use(express());
+app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
   res.send("Toy Server Running");
@@ -60,6 +62,14 @@ async function run() {
         res.send(result)
 
     });
+
+    app.post('/addToy', async(req, res) => {
+        const body = req.body
+        const result = await toysCollection.insertOne(body)
+        console.log(result)
+        res.send(result)
+    })
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
