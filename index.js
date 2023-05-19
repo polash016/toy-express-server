@@ -37,11 +37,29 @@ async function run() {
     const database = client.db("toysDB");
     const toysCollection = database.collection("carToys");
 
+    const indexKeys = {name:1}
+    const indexOptions = {name: 'toys'}
+    await toysCollection.createIndex(indexKeys, indexOptions)
+
     app.get("/toys", async (req, res) => {
       const result = await toysCollection.find().limit(20).toArray();
       res.send(result);
     });
     
+    app.get("/toys/:text", async(req, res) => {
+        const searchText = req.params.text;
+        
+        const result = await toysCollection.find({
+            $or: [
+                
+                {name: { $regex: searchText, $options: 'i'}},
+                {sub_category:{ $regex: searchText, $options: 'i'}}
+        
+        ]
+        }).toArray();
+        res.send(result)
+
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
