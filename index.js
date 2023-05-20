@@ -64,9 +64,17 @@ async function run() {
     });
 
     app.post('/addToy', async(req, res) => {
-        const body = req.body
+        const body = req.body;
+        // if(!body){
+        //     return res.status(404).send({message: 'Request Invalid'})
+        // }
         const result = await toysCollection.insertOne(body)
         console.log(result)
+        res.send(result)
+    })
+    app.get('/myToys/:email', async(req, res) => {
+        const email = req.params.email
+        const result = await toysCollection.find({seller_email: email}).toArray()
         res.send(result)
     })
 
