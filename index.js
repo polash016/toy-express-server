@@ -7,15 +7,28 @@ const bodyParser = require("body-parser");
 const port = process.env.PORT || 5000;
 
 // middleware
+// const corsConfig = {
+//   origin: '',
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE']
+// }
+// app.use(cors(corsConfig))
+// app.options("", cors(corsConfig))
+// const corsConfig = {
+//   origin: '*',
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE']
+// }
+// app.use("", cors(corsConfig))
+// app.options("", cors(corsConfig))
 app.use(cors());
 app.use(express());
+app.use(express.json())
 app.use(bodyParser.json());
 
-app.get("/", (req, res) => {
-  res.send("Toy Server Running");
-});
 
-const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Pass}@cluster0.bioniru.mongodb.net/?retryWrites=true&w=majority`;
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bioniru.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -29,9 +42,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    //  client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
@@ -39,12 +52,12 @@ async function run() {
     const database = client.db("toysDB");
     const toysCollection = database.collection("carToys");
 
-    const indexKeys = { name: 1 };
-    const indexOptions = { name: "toys" };
-    await toysCollection.createIndex(indexKeys, indexOptions);
+    // const indexKeys = { name: 1 };
+    // const indexOptions = { name: "toys" };
+    // await toysCollection.createIndex(indexKeys, indexOptions);
 
     app.get("/toys", async (req, res) => {
-      const result = await toysCollection.find().limit(20).toArray();
+      const result = await toysCollection?.find().limit(20).toArray();
       res.send(result);
     });
 
@@ -73,18 +86,27 @@ async function run() {
     });
     app.get("/myToys/:email", async (req, res) => {
       const email = req.params.email;
+      const { sort } = req.query; // Get the sort parameter from query
+
+  // Build the sorting options based on the sort parameter
+  const sortOptions = {};
+  if (sort === 'asc') {
+    sortOptions.price = 1; // Sort by name in ascending order
+  } else if (sort === 'desc') {
+    sortOptions.price = -1; // Sort by name in descending order
+  }
       const result = await toysCollection
         .find({ seller_email: email })
-        .sort({ price: -1 })
+        .sort(sortOptions)
         .toArray();
       res.send(result);
     });
-    app.get('/toy/:id', async (req, res) => {
+    app.get("/toy/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id)
-      const filter = {_id: new ObjectId(id)};
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
       const result = await toysCollection.findOne(filter);
-      res.send(result)
+      res.send(result);
     });
     app.get("/update/:id", async (req, res) => {
       const id = req.params.id;
@@ -114,19 +136,21 @@ async function run() {
       );
       res.send(result);
     });
-    app.delete('/toys/:id', async(req, res) => {
+    app.delete("/toys/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await toysCollection.deleteOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
 run().catch(console.dir);
-
+app.get("/", (req, res) => {
+  res.send("Toy Server Running");
+});
 app.listen(port, () => {
   console.log(`Server Running on Port: ${port}`);
 });
